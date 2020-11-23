@@ -38,13 +38,14 @@ function request(options, callback) {
     throw new Error('No options given')
   }
 
+  var isFormData = options.body instanceof window.FormData
   var options_onResponse = options.onResponse; // Save this for later.
 
   if (typeof options === 'string') {
     options = {
       'uri': options
     };
-  } else {
+  } else if (!isFormData) {
     options = JSON.parse(JSON.stringify(options)); // Use a duplicate for mutating.
   }
 
@@ -67,15 +68,15 @@ function request(options, callback) {
     throw new Error("options.uri must be a string");
   }
 
-  var unsupported_options = ['proxy', '_redirectsFollowed', 'maxRedirects']
+  var unsupported_options = ['proxy', '_redirectsFollowed', 'maxRedirects', 'followRedirect']
   for (var i = 0; i < unsupported_options.length; i++)
     if (options[unsupported_options[i]]) {
       throw new Error("options." + unsupported_options[i] + " is not supported")
     }
 
-  if ('followRedirect' in options && !options.followRedirect) {
-    throw new Error("options.followRedirect == false is not supported")
-  }
+  // if ('followRedirect' in options && !options.followRedirect) {
+  //   throw new Error("options.followRedirect == false is not supported")
+  // }
   options.callback = callback
   options.method = options.method || 'GET';
   options.headers = options.headers || {};
@@ -86,7 +87,7 @@ function request(options, callback) {
     throw new Error("Options.headers.host is not supported");
   }
 
-  if (options.json) {
+  if (options.json && !isFormData) { // allow XHR to generate correct content type and boundary
     options.headers.accept = options.headers.accept || 'application/json'
     if (options.method !== 'GET') {
       options.headers['content-type'] = 'application/json'
@@ -237,9 +238,9 @@ function run_xhr(options) {
     xhr.withCredentials = !!options.withCredentials
   }
 
-  for (var key in options.headers) {
-    xhr.setRequestHeader(key, options.headers[key])
-  }
+  // for (var key in options.headers) {
+  //   xhr.setRequestHeader(key, options.headers[key])
+  // }
 
   xhr.send(options.body)
   return xhr
@@ -336,18 +337,16 @@ function run_xhr(options) {
     request.log.debug('Request done', {
       'id': xhr.id
     })
-
     if (options.blob) {
       xhr.body = xhr.response;
-    } else {
-      xhr.body = xhr.responseText
-    }
-    if (options.json) {
+    } else if (options.json) {
       try {
         xhr.body = JSON.parse(xhr.responseText)
       } catch (er) {
         return options.callback(er, xhr)
       }
+    } else {
+      xhr.body = xhr.responseText
     }
 
     options.callback(null, xhr, xhr.body)

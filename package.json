@@ -1,6 +1,6 @@
 {
-  "name": "browser-request",
-  "version": "0.5.1",
+  "name": "ut-browser-request",
+  "version": "1.0.2",
   "author": {
     "name": "Jason Smith",
     "email": "jhs@iriscouch.com"
@@ -26,7 +26,8 @@
   },
   "scripts": {
     "test": "node test-run.js",
-    "build": "browserify index.js -o browser-request.js"
+    "build": "browserify index.js -o browser-request.js",
+    "jenkins": "npm publish"
   },
   "devDependencies": {
     "phantomjs": "^2.1.0",
